@@ -1,12 +1,20 @@
 // client/src/socket.js
 import { io } from 'socket.io-client';
-
-const SERVER_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+import { API_URL } from './config';
 
 // One shared connection for the whole app.
-export const socket = io(SERVER_URL, {
+export const socket = io(API_URL, {
   autoConnect: false,
   transports: ['websocket', 'polling'],
+});
+
+// Logs connection errors for quick debugging in production console
+socket.on('connect', () => {
+  console.log('✅ Connected to CodeSync socket server:', socket.id);
+});
+
+socket.on('connect_error', (err) => {
+  console.error('❌ CodeSync socket connection error:', err.message);
 });
 
 // Checks both 'name' (from Person 1's Home.jsx) and 'codesync_name'
