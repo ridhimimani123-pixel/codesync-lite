@@ -38,7 +38,13 @@ function endRun(room) {
 function getRoomState(roomId) {
   const room = rooms.get(roomId);
   if (!room) return null;
-  return { code: room.code, language: room.language, users: userNames(room) };
+  return {
+    code: room.code,
+    language: room.language,
+    output: room.output,
+    running: room.running,
+    users: userNames(room),
+  };
 }
 
 function initSocket(serverOrIo) {
@@ -48,12 +54,28 @@ function initSocket(serverOrIo) {
     io = serverOrIo;
   } else {
     io = new Server(serverOrIo, {
-      // '*' lets the Vercel site (and localhost) connect; no cookies are used
-      cors: { origin: '*', methods: ['GET', 'POST'] },
+      cors: {
+        origin: true, // Allow any origin (Vercel domains, preview URLs, localhost)
+        methods: ['GET', 'POST'],
+        credentials: true,
+      },
+      transports: ['websocket', 'polling'],
     });
   }
 
   io.on('connection', (socket) => {
+    // Use the room this socket joined; fall back to the roomId the client sends
+    // (covers a reconnect where the join hasn't been registered again yet)
+    const resolveRoom = (payloadRoomId) => {
+      const id = socket.data.roomId || payloadRoomId;
+      if (typeof id !== 'string' || !id) return null;
+      if (!socket.data.roomId) {
+        socket.join(id);
+        socket.data.roomId = id;
+      }
+      return id;
+    };
+
     // join-room { roomId, name }
     socket.on('join-room', ({ roomId, name } = {}) => {
       if (typeof roomId !== 'string' || !roomId) return;
@@ -63,7 +85,8 @@ function initSocket(serverOrIo) {
       clearTimeout(room.cleanupTimer);
 
       socket.join(roomId);
-      socket.data.roomId = roomId; // trust this, not payloads, from now on
+      socket.data.roomId = roomId;
+      socket.data.username = displayName;
       room.users.set(socket.id, displayName);
 
       // Late joiners get the current code, language, output and run state right away
@@ -81,27 +104,35 @@ function initSocket(serverOrIo) {
       });
     });
 
-    // code-change { code }
-    socket.on('code-change', ({ code } = {}) => {
-      const roomId = socket.data.roomId;
-      if (!roomId || typeof code !== 'string') return;
-      getRoom(roomId).code = code;
-      socket.to(roomId).emit('code-change', { code });
+    // code-change { roomId, code }
+    socket.on('code-change', ({ code, roomId } = {}) => {
+      const targetRoom = socket.data.roomId || roomId;
+      if (!targetRoom || typeof code !== 'string') return;
+      if (roomId && !socket.data.roomId) {
+        socket.join(roomId);
+        socket.data.roomId = roomId;
+      }
+      getRoom(targetRoom).code = code;
+      socket.to(targetRoom).emit('code-change', { code });
     });
 
-    // language-change { language }
-    socket.on('language-change', ({ language } = {}) => {
-      const roomId = socket.data.roomId;
-      if (!roomId || !LANGUAGES.includes(language)) return;
-      getRoom(roomId).language = language;
-      socket.to(roomId).emit('language-change', { language });
+    // language-change { roomId, language }
+    socket.on('language-change', ({ language, roomId } = {}) => {
+      const targetRoom = socket.data.roomId || roomId;
+      if (!targetRoom || !LANGUAGES.includes(language)) return;
+      if (roomId && !socket.data.roomId) {
+        socket.join(roomId);
+        socket.data.roomId = roomId;
+      }
+      getRoom(targetRoom).language = language;
+      socket.to(targetRoom).emit('language-change', { language });
     });
 
     // ---- Run / Stop / output, kept in sync for everyone in the room ----
 
     // run-start { runId }: this person pressed Run. The latest start wins.
-    socket.on('run-start', ({ runId } = {}) => {
-      const roomId = socket.data.roomId;
+    socket.on('run-start', ({ runId, roomId: payloadRoomId } = {}) => {
+      const roomId = resolveRoom(payloadRoomId);
       if (!roomId || typeof runId !== 'string') return;
       const room = getRoom(roomId);
       const by = room.users.get(socket.id) || 'Someone';
@@ -121,8 +152,8 @@ function initSocket(serverOrIo) {
     });
 
     // run-result { runId, output }: the runner finished
-    socket.on('run-result', ({ runId, output } = {}) => {
-      const roomId = socket.data.roomId;
+    socket.on('run-result', ({ runId, output, roomId: payloadRoomId } = {}) => {
+      const roomId = resolveRoom(payloadRoomId);
       if (!roomId) return;
       const room = getRoom(roomId);
       if (!room.running || room.runId !== runId) return; // stopped or superseded
@@ -132,8 +163,8 @@ function initSocket(serverOrIo) {
     });
 
     // run-stop: anyone in the room can stop the current run
-    socket.on('run-stop', () => {
-      const roomId = socket.data.roomId;
+    socket.on('run-stop', ({ roomId: payloadRoomId } = {}) => {
+      const roomId = resolveRoom(payloadRoomId);
       if (!roomId) return;
       const room = getRoom(roomId);
       if (!room.running) return;
@@ -144,8 +175,8 @@ function initSocket(serverOrIo) {
     });
 
     // output-update { output }: syntax-check results and "Clear"
-    socket.on('output-update', ({ output } = {}) => {
-      const roomId = socket.data.roomId;
+    socket.on('output-update', ({ output, roomId: payloadRoomId } = {}) => {
+      const roomId = resolveRoom(payloadRoomId);
       if (!roomId) return;
       const room = getRoom(roomId);
       if (room.running) return;

@@ -104,7 +104,7 @@ export default function Room() {
     runIdRef.current = runId;
     setRunning(true);
     setOutput("Running...");
-    socket.emit("run-start", { runId });
+    socket.emit("run-start", { runId, roomId });
 
     const finish = (out) => {
       if (runIdRef.current !== runId) return; // stopped, or replaced by someone else's run
@@ -112,7 +112,7 @@ export default function Room() {
       abortRef.current = null;
       setRunning(false);
       setOutput(out);
-      socket.emit("run-result", { runId, output: out });
+      socket.emit("run-result", { runId, output: out, roomId });
     };
 
     try {
@@ -166,12 +166,12 @@ export default function Room() {
     runIdRef.current = null;
     setRunning(false);
     setOutput("Execution stopped.");
-    socket.emit("run-stop"); // everyone else stops too
+    socket.emit("run-stop", { roomId }); // everyone else stops too
   };
 
   const clearOutput = () => {
     setOutput("");
-    socket.emit("output-update", { output: "" });
+    socket.emit("output-update", { output: "", roomId });
   };
 
   const copyLink = () => {
