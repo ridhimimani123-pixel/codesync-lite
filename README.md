@@ -226,7 +226,7 @@ Open **http://localhost:5173** in two browser tabs to test real-time sync.
 | Riya Mehta          | Frontend / UI         | `App.jsx`, `pages/`                                                   |
 | Ramya S             | Real-time Sync        | `server/socket.js`, `client/socket.js`, `CodeEditor.jsx`              |
 | Ridhi Mimani        | Backend / DB          | `server/index.js`, `models/`, `routes/rooms.js`, `routes/feedback.js` |
-| Nikhitha Pabbisetty | Integrations / Deploy | `routes/execute.js`, `VideoCall.jsx`, `FeedbackForm.jsx`, README      |
+| Pabbisetty Nikhitha | Integrations / Deploy | `routes/execute.js`, `VideoCall.jsx`, `FeedbackForm.jsx`, README      |
 
 
 ---
