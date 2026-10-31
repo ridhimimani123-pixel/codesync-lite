@@ -14,17 +14,6 @@ A real-time collaborative code interview platform. An interviewer creates a room
 
 ---
 
-## Screenshots
-
-> TODO: Add a screenshot or GIF here. Save images in a `docs/` folder and link them like this:
-
-```
-![Live editing demo](docs/demo.gif)
-![Feedback form](docs/feedback.png)
-```
-
----
-
 ## Features
 
 - **Real-time collaborative editing:** code and language changes sync instantly between participants (Socket.IO)
@@ -232,14 +221,13 @@ Open **http://localhost:5173** in two browser tabs to test real-time sync.
 
 ## Team
 
-| Name            | Role                  | Key Files                                                             |
-|-----------------|-----------------------|-----------------------------------------------------------------------|
-| _Your name_     | Frontend / UI         | `App.jsx`, `pages/`                                                   |
-| _Teammate name_ | Real-time Sync        | `server/socket.js`, `client/socket.js`, `CodeEditor.jsx`              |
-| _Teammate name_ | Backend / DB          | `server/index.js`, `models/`, `routes/rooms.js`, `routes/feedback.js` |
-| _Teammate name_ | Integrations / Deploy | `routes/execute.js`, `VideoCall.jsx`, `FeedbackForm.jsx`, README      |
+| Name                | Role                  | Key Files                                                             |
+|-----------------    |-----------------------|-----------------------------------------------------------------------|
+| Riya Mehta          | Frontend / UI         | `App.jsx`, `pages/`                                                   |
+| Ramya S             | Real-time Sync        | `server/socket.js`, `client/socket.js`, `CodeEditor.jsx`              |
+| Ridhi Mimani        | Backend / DB          | `server/index.js`, `models/`, `routes/rooms.js`, `routes/feedback.js` |
+| Nikhitha Pabbisetty | Integrations / Deploy | `routes/execute.js`, `VideoCall.jsx`, `FeedbackForm.jsx`, README      |
 
-> TODO: Replace the placeholder names and roles with the real ones, and link GitHub profiles if you like.
 
 ---
 
